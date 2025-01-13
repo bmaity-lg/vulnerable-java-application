@@ -11,22 +11,31 @@ on:
       - main
      
 jobs:
-  ngsast-build:
-    runs-on: ubuntu-20.04
+  NextGen-Static-Analysis:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    - name: Setup Java JDK v11.0.x
+      uses: actions/setup-java@v3
+      with:
+        distribution: zulu
+        java-version: 11.0.x
 
-    - name: Download the Qwiet CLI and set permissions
+    - name: Download ShiftLeft CLI
       run: |
         curl https://cdn.shiftleft.io/download/sl > ${GITHUB_WORKSPACE}/sl && chmod a+rx ${GITHUB_WORKSPACE}/sl
 
-    # Qwiet requires Java 1.8
-    - name: Set up Java
-      uses: actions/setup-java@v1.4.3
-      with:
-        java-version: 1.8
-    - name: NextGen Static Analysis
-      run: ${GITHUB_WORKSPACE}/sl analyze --app ShiftLeftPython --tag branch=${{ github.head_ref || steps.extract_branch.outputs.branch }} --python .
+    - name: preZero Static Analysis
+      run: |
+        ${GITHUB_WORKSPACE}/sl --version
+        ${GITHUB_WORKSPACE}/sl analyze --strict --wait \
+          --app shiftleft-java-demo \
+          --tag branch=${{ github.head_ref }} \
+          --javasrc --container 18fgsa/s3-resource .
       env:
         SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
+        SHIFTLEFT_API_HOST: www.shiftleft.io
+        SHIFTLEFT_GRPC_TELEMETRY_HOST: telemetry.shiftleft.io:443
+        SHIFTLEFT_GRPC_API_HOST: api.shiftleft.io:443
+
   
